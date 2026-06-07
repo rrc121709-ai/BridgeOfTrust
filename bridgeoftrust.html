@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bridge of Trust – Social Engineering Defense Simulator</title>
+<style>
+    body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #020617, #020617 40%, #0b1120);
+        color: #e5e7eb;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: stretch;
+        padding: 30px;
+        box-sizing: border-box;
+    }
+    .game {
+        width: 100%;
+        max-width: 1100px;
+        background: rgba(15, 23, 42, 0.95);
+        border-radius: 18px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        border: 1px solid #1f2937;
+        display: grid;
+        grid-template-columns: 2fr 1.4fr;
+        overflow: hidden;
+    }
+    .left, .right {
+        padding: 24px 28px;
+    }
+    .left {
+        border-right: 1px solid #1f2937;
+    }
+    h1 {
+        margin: 0 0 6px 0;
+        font-size: 26px;
+    }
+    .subtitle {
+        margin: 0 0 18px 0;
+        color: #9ca3af;
+        font-size: 14px;
+    }
+    .stats {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+    .stat {
+        flex: 1;
+        min-width: 120px;
+        background: #020617;
+        border-radius: 12px;
+        padding: 10px 12px;
+        border: 1px solid #1f2937;
+        font-size: 13px;
+    }
+    .stat-label {
+        color: #9ca3af;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .stat-value {
+        font-size: 18px;
+        margin-top: 4px;
+    }
+    .bar {
+        height: 8px;
+        border-radius: 999px;
+        background: #020617;
+        overflow: hidden;
+        margin-top: 6px;
+    }
+    .bar-inner {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.3s ease;
+    }
+    .bar-inner.trust {
+        background: linear-gradient(90deg, #22c55e, #4ade80);
+    }
+    .bar-inner.risk {
+        background: linear-gradient(90deg, #f97316, #ef4444);
+    }
+    .scenario-card {
+        background: #020617;
+        border-radius: 14px;
+        border: 1px solid #1f2937;
+        padding: 16px 18px;
+        margin-top: 10px;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .scenario-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .sender {
+        font-weight: 600;
+        font-size: 16px;
+    }
+    .channel {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #0f172a;
+        border: 1px solid #1f2937;
+        color: #9ca3af;
+    }
+    .meta {
+        font-size: 12px;
+        color: #9ca3af;
+    }
+    .message {
+        background: #020617;
+        border-radius: 10px;
+        border: 1px solid #1f2937;
+        padding: 10px 12px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    .flags {
+        font-size: 12px;
+        color: #f97316;
+    }
+    .actions {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 12px;
+    }
+    .action-btn {
+        padding: 10px;
+        border-radius: 999px;
+        border: none;
+        font-size: 13px;
+        cursor: pointer;
+        background: #111827;
+        color: #e5e7eb;
+        border: 1px solid #1f2937;
+        transition: 0.2s;
+    }
+    .action-btn:hover {
+        background: #1f2937;
+    }
+    .action-trust { color: #22c55e; }
+    .action-verify { color: #eab308; }
+    .action-block { color: #f97316; }
+    .log {
+        font-size: 12px;
+        max-height: 260px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+    .log-entry {
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px dashed #1f2937;
+    }
+    .log-entry:last-child {
+        border-bottom: none;
+    }
+    .log-label {
+        font-weight: 600;
+        font-size: 12px;
+    }
+    .log-text {
+        color: #9ca3af;
+    }
+    .badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 999px;
+        font-size: 10px;
+        margin-left: 4px;
+    }
+    .badge-good {
+        background: #064e3b;
+        color: #bbf7d0;
+    }
+    .badge-bad {
+        background: #7f1d1d;
+        color: #fecaca;
+    }
+    .badge-neutral {
+        background: #111827;
+        color: #e5e7eb;
+    }
+    .right h2 {
+        margin-top: 0;
+        font-size: 18px;
+        margin-bottom: 8px;
+    }
+    .hint {
+        font-size: 12px;
+        color: #9ca3af;
+        margin-bottom: 10px;
+    }
+    .end-screen {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 10px;
+        background: #020617;
+        border: 1px solid #1f2937;
+        font-size: 13px;
+    }
+    .end-title {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .restart-btn {
+        margin-top: 10px;
+        width: 100%;
+        padding: 8px;
+        border-radius: 999px;
+        border: none;
+        background: #6366f1;
+        color: white;
+        cursor: pointer;
+        font-size: 13px;
+    }
+    .home-screen {
+        text-align: center;
+    }
+    .home-title {
+        font-size: 26px;
+        margin-bottom: 8px;
+    }
+    .home-sub {
+        font-size: 14px;
+        color: #9ca3af;
+        margin-bottom: 20px;
+    }
+    .home-section {
+        margin-bottom: 16px;
+    }
+    .home-label {
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+    .home-options {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .home-btn {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid #1f2937;
+        background: #020617;
+        color: #e5e7eb;
+        cursor: pointer;
+        font-size: 13px;
+    }
+    .home-btn.selected {
+        background: #6366f1;
+        border-color: #818cf8;
+    }
+    .home-start {
+        margin-top: 16px;
+        padding: 10px 20px;
+        border-radius: 999px;
+        border: none;
+        background: #22c55e;
+        color: #022c22;
+        font-size: 15px;
+        cursor: pointer;
+    }
+    @media (max-width: 900px) {
+        .game {
+            grid-template-columns: 1fr;
+        }
+        .left {
+            border-right: none;
+            border-bottom: 1px solid #1f2937;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="game">
+    <div class="left" id="leftPane"></div>
+    <div class="right">
+        <h2>Incident Log</h2>
+        <div class="hint">
+            Your choices build or break the bridge of trust.<br>
+            ✅ Good calls keep risk low and trust strong.<br>
+            ❌ Bad calls either let attacks through or damage relationships.
+        </div>
+        <div class="log" id="log"></div>
+        <div id="endScreen"></div>
+    </div>
+</div>
+
+<script>
+// EASY SCENARIOS (15)
+const easyScenarios = [
+    {
+        sender: "HR – Benefits",
+        channel: "Email",
+        dept: "HR",
+        message: "We’re finalizing benefits enrollment. Please confirm your preferred mailing address for your benefits package.",
+        flags: ["Normal HR process", "No credentials requested", "No links"],
+        truth: "legit",
+        best: "trust",
+        explanation: "This is a standard HR request with no sensitive data or links."
+    },
+    {
+        sender: "IT – Password Expiry",
+        channel: "Email",
+        dept: "IT",
+        message: "Your password will expire in 7 days. Please update it via the official intranet password portal.",
+        flags: ["Advance notice", "Refers to official portal", "No direct link"],
+        truth: "legit",
+        best: "trust",
+        explanation: "It directs you to the known portal, not a random link."
+    },
+    {
+        sender: "Facilities – Desk Move",
+        channel: "Ticket System",
+        dept: "Facilities",
+        message: "We’re updating seating charts. Can you confirm your current desk number and floor?",
+        flags: ["Operational request", "No sensitive data", "No urgency"],
+        truth: "legit",
+        best: "trust",
+        explanation: "This is routine facilities work with no security risk."
+    },
+    {
+        sender: "Internal Survey Bot",
+        channel: "Email",
+        dept: "Internal Tools",
+        message: "Please complete this 2-question satisfaction survey about the new coffee machines. No login required.",
+        flags: ["No login", "Low impact", "Internal topic"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Harmless internal survey, no credentials or sensitive info."
+    },
+    {
+        sender: "HR – Time Off",
+        channel: "Email",
+        dept: "HR",
+        message: "Your recent PTO request has been approved. No further action is required.",
+        flags: ["Informational", "No links", "No data requested"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Purely informational, nothing to exploit."
+    },
+    {
+        sender: "IT – Scheduled Maintenance",
+        channel: "Email",
+        dept: "IT",
+        message: "We will reboot the VPN server tonight at 11 PM for maintenance. No action is required from you.",
+        flags: ["Maintenance notice", "No links", "No credentials"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Standard maintenance notice, no risky request."
+    },
+    {
+        sender: "Finance – Receipt Confirmation",
+        channel: "Email",
+        dept: "Finance",
+        message: "Did you receive the reimbursement for last month’s approved travel expenses?",
+        flags: ["Follow-up question", "No attachments", "No credentials"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Simple confirmation, no sensitive data requested."
+    },
+    {
+        sender: "Internal Bot – Meeting Reminder",
+        channel: "Calendar",
+        dept: "Internal Tools",
+        message: "Reminder: You have a project sync meeting in 10 minutes.",
+        flags: ["Calendar reminder", "No action needed", "No links"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Standard calendar reminder."
+    },
+    {
+        sender: "HR – Policy Update",
+        channel: "Email",
+        dept: "HR",
+        message: "Please acknowledge the updated dress code policy in the HR portal.",
+        flags: ["Policy update", "Refers to known portal", "No direct link"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Normal HR policy update referencing official portal."
+    },
+    {
+        sender: "IT – MFA Reminder",
+        channel: "Email",
+        dept: "IT",
+        message: "Your MFA token will expire soon. Renew it in the official MFA settings page.",
+        flags: ["Security-related", "Refers to known settings page", "No direct link"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Legitimate reminder, no suspicious link or data request."
+    },
+    {
+        sender: "Security – Badge Check",
+        channel: "Ticket System",
+        dept: "Security",
+        message: "Please confirm your badge ID number so we can renew your building access.",
+        flags: ["Internal security process", "Limited data", "No credentials"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Standard badge renewal, not asking for passwords or secrets."
+    },
+    {
+        sender: "Team Lead",
+        channel: "Chat",
+        dept: "Your Team",
+        message: "Can you share the link to the shared project folder? I can’t find it in my bookmarks.",
+        flags: ["Internal request", "No sensitive data", "Known person"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Normal internal collaboration request."
+    },
+    {
+        sender: "Internal Bot – Birthday Reminder",
+        channel: "Email",
+        dept: "Internal Tools",
+        message: "It’s your teammate’s birthday today. Don’t forget to say happy birthday!",
+        flags: ["Informational", "No links", "No data"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Harmless internal reminder."
+    },
+    {
+        sender: "HR – Training Reminder",
+        channel: "Email",
+        dept: "HR",
+        message: "Your annual compliance training is due next week. Please complete it in the training portal.",
+        flags: ["Training reminder", "Refers to known portal", "No direct link"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Standard training reminder referencing official portal."
+    },
+    {
+        sender: "IT – Printer Issue",
+        channel: "Chat",
+        dept: "IT",
+        message: "Is the printer on your floor still jammed, or did it get fixed?",
+        flags: ["Operational question", "No data", "No urgency"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Routine IT follow-up, no security risk."
+    }
+];
+
+// MEDIUM SCENARIOS (15)
+const mediumScenarios = [
+    {
+        sender: "IT – Security Alert",
+        channel: "Email",
+        dept: "IT",
+        message: "We detected a login from a new device in another region. Was this you? If not, please contact the helpdesk via the intranet.",
+        flags: ["Security alert", "New device", "Refers to intranet"],
+        truth: "legit_maybe",
+        best: "verify",
+        explanation: "Could be real, but you should verify via the official helpdesk channel."
+    },
+    {
+        sender: "Finance – Invoice Check",
+        channel: "Email",
+        dept: "Finance",
+        message: "We received an invoice that references your cost center. Can you confirm whether this invoice belongs to your team?",
+        flags: ["Financial context", "No links", "No credentials"],
+        truth: "legit_maybe",
+        best: "verify",
+        explanation: "Reasonable request, but verifying via finance channel is safer."
+    },
+    {
+        sender: "Vendor – CloudHost",
+        channel: "Email",
+        dept: "External Vendor",
+        message: "We’re updating our billing system. Please confirm your account ID so we can ensure continuity of service.",
+        flags: ["Vendor request", "Account info", "No credentials"],
+        truth: "legit_maybe",
+        best: "verify",
+        explanation: "Could be legitimate, but verify via the vendor portal or known contact."
+    },
+    {
+        sender: "HR – New Hire Access",
+        channel: "Ticket System",
+        dept: "HR",
+        message: "We need to provision access for a new hire on your team. Please confirm which systems they should have access to.",
+        flags: ["New hire", "Access scoping", "No credentials"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Standard HR/IT process; approve with least privilege."
+    },
+    {
+        sender: "IT – Password Reset Link",
+        channel: "Email",
+        dept: "IT (maybe)",
+        message: "Your password has expired. Click this link to reset it immediately.",
+        flags: ["Direct link", "Urgency", "Could be phishing"],
+        truth: "attack",
+        best: "verify",
+        explanation: "Password reset links can be spoofed. Use the official portal instead."
+    },
+    {
+        sender: "Finance – Urgent Spreadsheet",
+        channel: "Chat",
+        dept: "Finance",
+        message: "I need the latest Q4 revenue spreadsheet ASAP for a call. Can you send it directly to me?",
+        flags: ["Time pressure", "Sensitive data", "Unusual direct request"],
+        truth: "legit_maybe",
+        best: "verify",
+        explanation: "Might be real, but verify identity or use secure shared storage."
+    },
+    {
+        sender: "Security – Training Link",
+        channel: "Email",
+        dept: "Security",
+        message: "Our records show your phishing training is overdue. Click this link to complete it now.",
+        flags: ["Training context", "Direct link", "Could be spoofed"],
+        truth: "legit_maybe",
+        best: "verify",
+        explanation: "Training emails are often spoofed. Access training via the official portal."
+    },
+    {
+        sender: "Vendor – SSL Certificate",
+        channel: "Email",
+        dept: "External Vendor",
+        message: "Your SSL certificate is expiring soon. Please renew using the attached form and send it back.",
+        flags: ["Attachment", "Certificate context", "Unusual renewal process"],
+        truth: "attack",
+        best: "block",
+        explanation: "Certificate renewals should be done via official tools, not email attachments."
+    },
+    {
+        sender: "IT – Software Update",
+        channel: "Email",
+        dept: "IT",
+        message: "We recommend installing the latest security patch for your workstation. Instructions are available on the intranet.",
+        flags: ["Security patch", "Refers to intranet", "No direct download"],
+        truth: "legit_maybe",
+        best: "verify",
+        explanation: "Check the intranet or IT portal rather than trusting the email blindly."
+    },
+    {
+        sender: "HR – Payroll Correction",
+        channel: "Email",
+        dept: "HR (maybe)",
+        message: "Due to a payroll error, we need to reconfirm your bank account details. Please reply with your full account and routing number.",
+        flags: ["Sensitive financial data", "Asks for full details", "Unusual via email"],
+        truth: "attack",
+        best: "block",
+        explanation: "Legitimate HR would not ask for full bank details over email."
+    },
+    {
+        sender: "Internal Bot – Access Request",
+        channel: "Ticket System",
+        dept: "Internal Tools",
+        message: "User Alex is requesting access to your project repository. Approve or deny this request.",
+        flags: ["Access request", "Internal system", "No credentials"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Normal internal access workflow; approve if appropriate."
+    },
+    {
+        sender: "Security – Suspicious Email Report",
+        channel: "Email",
+        dept: "Security",
+        message: "We’re investigating a suspicious email campaign. Did you receive an email from sender 'alerts@secure-mail.com'?",
+        flags: ["Security investigation", "No links", "No credentials"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Security team asking for info, not secrets."
+    },
+    {
+        sender: "Vendor – API Key Rotation",
+        channel: "Email",
+        dept: "External Vendor",
+        message: "We recommend rotating your API key. Please rotate it using the developer console linked from our official site.",
+        flags: ["API key", "Security best practice", "Refers to official console"],
+        truth: "legit_maybe",
+        best: "verify",
+        explanation: "Good practice, but verify via the vendor’s official console."
+    },
+    {
+        sender: "IT – VPN Issue",
+        channel: "Chat",
+        dept: "IT",
+        message: "We saw your VPN session drop unexpectedly. Are you still having connection issues?",
+        flags: ["Operational question", "No credentials", "No links"],
+        truth: "legit",
+        best: "trust",
+        explanation: "Routine IT follow-up, no sensitive request."
+    },
+    {
+        sender: "Finance – Expense Audit",
+        channel: "Email",
+        dept: "Finance",
+        message: "We’re auditing last quarter’s expenses. Please confirm whether these three receipts belong to your team.",
+        flags: ["Audit context", "Limited data", "No credentials"],
+        truth: "legit_maybe",
+        best: "verify",
+        explanation: "Reasonable request, but verify via finance channel if unsure."
+    }
+];
+
+// HARD SCENARIOS (15)
+const hardScenarios = [
+    {
+        sender: "CEO – Direct",
+        channel: "SMS",
+        dept: "Executive",
+        message: "I’m in a board meeting and need you to quietly purchase $2000 in gift cards for a client event. I’ll reimburse you. Don’t loop anyone else in yet.",
+        flags: ["Secrecy", "Unusual request", "Out-of-band channel (SMS)"],
+        truth: "attack",
+        best: "block",
+        explanation: "Classic CEO fraud / gift card scam. You should block and report this."
+    },
+    {
+        sender: "Unknown – “Fraud Department”",
+        channel: "Phone Call",
+        dept: "???",
+        message: "Hi, I’m from your bank’s fraud department. We detected suspicious activity. To block your card, I need you to confirm the full card number and CVV.",
+        flags: ["Asks for full card details", "Unverified caller", "High urgency"],
+        truth: "attack",
+        best: "block",
+        explanation: "Banks never ask for full card details and CVV over the phone."
+    },
+    {
+        sender: "DevOps – Jenkins Bot",
+        channel: "Chat",
+        dept: "Engineering (maybe)",
+        message: "Build failed due to missing API key. Please paste the key here so I can update the CI configuration for you.",
+        flags: ["Asks to paste secret", "Could be impersonation", "Sensitive data"],
+        truth: "attack",
+        best: "block",
+        explanation: "Never paste secrets into chat. Use the secret manager instead."
+    },
+    {
+        sender: "“Security Operations” <soc-alerts@company-sec.com>",
+        channel: "Email",
+        dept: "Security (maybe)",
+        message: "We detected a possible compromise of your workstation. Download the attached scanner and run it with admin privileges to clean your system.",
+        flags: ["Attachment", "Requests admin privileges", "Vague details"],
+        truth: "attack",
+        best: "block",
+        explanation: "Malware often masquerades as security tools. Use official endpoint tools."
+    },
+    {
+        sender: "Vendor – Support Engineer",
+        channel: "Email",
+        dept: "External Vendor",
+        message: "We’re troubleshooting an issue affecting your account. Please grant us temporary access to your internal dashboard so we can investigate.",
+        flags: ["Requests internal access", "Vendor context", "High privilege"],
+        truth: "attack",
+        best: "verify",
+        explanation: "Vendors should not need direct access to internal dashboards. Verify via official channels."
+    },
+    {
+        sender: "HR – Records Update",
+        channel: "Email",
+        dept: "HR (maybe)",
+        message: "We’re updating employee records for compliance. Please reply with your full Social Security Number to confirm our records.",
+        flags: ["Asks for SSN", "Email channel", "Sensitive personal data"],
+        truth: "attack",
+        best: "block",
+        explanation: "Legitimate HR would not ask for full SSN over email."
+    },
+    {
+        sender: "“Microsoft 365 Security”",
+        channel: "Email",
+        dept: "External Service",
+        message: "Your Microsoft 365 session has expired. Log in using this link to restore access immediately.",
+        flags: ["Direct login link", "Urgency", "Could be spoofed"],
+        truth: "attack",
+        best: "verify",
+        explanation: "Login links can be phishing. Use the official Microsoft portal instead."
+    },
+    {
+        sender: "IT – Malware Ticket",
+        channel: "Ticket System",
+        dept: "IT (maybe)",
+        message: "We detected malware on your device. Please send us your system logs and your username and password so we can investigate.",
+        flags: ["Asks for password", "Security context", "Unusual request"],
+        truth: "attack",
+        best: "block",
+        explanation: "IT should never ask for your password. This is malicious."
+    },
+    {
+        sender: "“CFO – Maria”",
+        channel: "Email",
+        dept: "Finance (maybe)",
+        message: "We need to urgently approve a wire transfer to a new vendor. Please confirm this transfer in the attached form.",
+        flags: ["Urgent wire transfer", "Attachment", "Executive impersonation"],
+        truth: "attack",
+        best: "block",
+        explanation: "Wire transfer scams often impersonate executives. Verify via known channels."
+    },
+    {
+        sender: "Vendor – Contract Renewal",
+        channel: "Email",
+        dept: "External Vendor",
+        message: "Your contract is up for renewal. Please sign the attached PDF and send it back to confirm.",
+        flags: ["Attachment", "Contract context", "Could be malicious"],
+        truth: "attack",
+        best: "verify",
+        explanation: "Contracts should be handled via official e-sign platforms, not random attachments."
+    },
+    {
+        sender: "HR – Confidential Survey",
+        channel: "Email",
+        dept: "HR (maybe)",
+        message: "We’re running a confidential HR survey. Please log in using this link and answer the questions honestly.",
+        flags: ["Login link", "Confidential context", "Could be spoofed"],
+        truth: "attack",
+        best: "verify",
+        explanation: "Survey login links can be phishing. Access surveys via the HR portal."
+    },
+    {
+        sender: "“Security Patch Team”",
+        channel: "Email",
+        dept: "Security (maybe)",
+        message: "A critical vulnerability affects your system. Install the attached patch immediately to avoid ransomware.",
+        flags: ["Attachment", "High urgency", "Vague details"],
+        truth: "attack",
+        best: "block",
+        explanation: "Patches should come from official update mechanisms, not email attachments."
+    },
+    {
+        sender: "IT – MFA Reset",
+        channel: "Email",
+        dept: "IT (maybe)",
+        message: "Your MFA token was compromised. Reset it using this link and re-enroll your device.",
+        flags: ["Security context", "Direct link", "Could be phishing"],
+        truth: "attack",
+        best: "verify",
+        explanation: "MFA reset links can be spoofed. Use the official MFA portal."
+    },
+    {
+        sender: "Legal – Compliance Review",
+        channel: "Email",
+        dept: "Legal (maybe)",
+        message: "We’re conducting a compliance review. Please send us your personal contact details and a copy of your government ID.",
+        flags: ["Sensitive personal data", "Unusual via email", "Vague justification"],
+        truth: "attack",
+        best: "block",
+        explanation: "Legal would not request ID scans over email."
+    },
+    {
+        sender: "Internal Audit – Access Check",
+        channel: "Email",
+        dept: "Internal Audit (maybe)",
+        message: "We’re verifying access logs. Please send us your username and password so we can confirm your permissions.",
+        flags: ["Asks for password", "Audit context", "Highly suspicious"],
+        truth: "attack",
+        best: "block",
+        explanation: "No legitimate team should ever ask for your password."
+    }
+];
+
+let currentScenarioIndex = 0;
+let trust = 60;
+let risk = 20;
+let gameOver = false;
+let selectedDifficulty = "easy";
+let totalRounds = 5;
+let scenarioSequence = [];
+
+const leftPane = document.getElementById("leftPane");
+const logDiv = document.getElementById("log");
+const endScreen = document.getElementById("endScreen");
+
+let trustBar, riskBar, trustScore, riskScore, roundDisplay, scenarioCard;
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function showHomeScreen() {
+    gameOver = false;
+    logDiv.innerHTML = "";
+    endScreen.innerHTML = "";
+    leftPane.innerHTML = `
+        <div class="home-screen">
+            <div class="home-title">Bridge of Trust</div>
+            <div class="home-sub">
+                A social engineering defense simulator. Build (or break) the bridge of trust.
+            </div>
+            <div class="home-section">
+                <div class="home-label">Select difficulty (message complexity)</div>
+                <div class="home-options">
+                    <button class="home-btn selected" id="diff-easy">Easy</button>
+                    <button class="home-btn" id="diff-medium">Medium</button>
+                    <button class="home-btn" id="diff-hard">Hard</button>
+                </div>
+            </div>
+            <div class="home-section">
+                <div class="home-label">Select number of rounds</div>
+                <div class="home-options">
+                    <button class="home-btn selected" id="round-5">5</button>
+                    <button class="home-btn" id="round-10">10</button>
+                    <button class="home-btn" id="round-20">20</button>
+                </div>
+            </div>
+            <button class="home-start" onclick="startGame()">Start Simulation</button>
+        </div>
+    `;
+    document.getElementById("diff-easy").onclick = () => setDifficulty("easy");
+    document.getElementById("diff-medium").onclick = () => setDifficulty("medium");
+    document.getElementById("diff-hard").onclick = () => setDifficulty("hard");
+    document.getElementById("round-5").onclick = () => setRounds(5);
+    document.getElementById("round-10").onclick = () => setRounds(10);
+    document.getElementById("round-20").onclick = () => setRounds(20);
+}
+
+function setDifficulty(diff) {
+    selectedDifficulty = diff;
+    ["diff-easy", "diff-medium", "diff-hard"].forEach(id => {
+        document.getElementById(id).classList.remove("selected");
+    });
+    document.getElementById("diff-" + diff).classList.add("selected");
+}
+
+function setRounds(n) {
+    totalRounds = n;
+    ["round-5", "round-10", "round-20"].forEach(id => {
+        document.getElementById(id).classList.remove("selected");
+    });
+    document.getElementById("round-" + n).classList.add("selected");
+}
+
+function startGame() {
+    trust = 60;
+    risk = 20;
+    gameOver = false;
+    currentScenarioIndex = 0;
+    logDiv.innerHTML = "";
+    endScreen.innerHTML = "";
+
+    leftPane.innerHTML = `
+        <h1>Bridge of Trust</h1>
+        <div class="subtitle">
+            Difficulty: ${selectedDifficulty.toUpperCase()} · Rounds: ${totalRounds}
+        </div>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Round</div>
+                <div class="stat-value" id="roundDisplay">1 / ${totalRounds}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Trust Bridge</div>
+                <div class="bar">
+                    <div class="bar-inner trust" id="trustBar" style="width:60%"></div>
+                </div>
+                <div class="stat-value" id="trustScore">60</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Risk Level</div>
+                <div class="bar">
+                    <div class="bar-inner risk" id="riskBar" style="width:20%"></div>
+                </div>
+                <div class="stat-value" id="riskScore">20</div>
+            </div>
+        </div>
+        <div class="scenario-card" id="scenarioCard"></div>
+    `;
+
+    trustBar = document.getElementById("trustBar");
+    riskBar = document.getElementById("riskBar");
+    trustScore = document.getElementById("trustScore");
+    riskScore = document.getElementById("riskScore");
+    roundDisplay = document.getElementById("roundDisplay");
+    scenarioCard = document.getElementById("scenarioCard");
+
+    buildScenarioSequence();
+    updateBars();
+    renderScenario();
+}
+
+function getPoolForDifficulty() {
+    if (selectedDifficulty === "easy") {
+        // 15 easy + 5 medium = 20 unique
+        return easyScenarios.concat(mediumScenarios.slice(0, 5));
+    }
+    if (selectedDifficulty === "medium") {
+        // 15 medium + 5 easy = 20 unique
+        return mediumScenarios.concat(easyScenarios.slice(0, 5));
+    }
+    // hard: 15 hard + 5 medium = 20 unique
+    return hardScenarios.concat(mediumScenarios.slice(5, 10));
+}
+
+function buildScenarioSequence() {
+    const pool = getPoolForDifficulty();
+    const shuffled = shuffle([...pool]);
+    scenarioSequence = shuffled.slice(0, totalRounds);
+}
+
+function renderScenario() {
+    if (currentScenarioIndex >= totalRounds) {
+        endGame();
+        return;
+    }
+    const s = scenarioSequence[currentScenarioIndex];
+    roundDisplay.textContent = `${currentScenarioIndex + 1} / ${totalRounds}`;
+    scenarioCard.innerHTML = `
+        <div class="scenario-header">
+            <div>
+                <div class="sender">${s.sender}</div>
+                <div class="meta">${s.dept} · ${s.channel}</div>
+            </div>
+            <div class="channel">${s.channel}</div>
+        </div>
+        <div class="message">${s.message}</div>
+        <div class="flags"><strong>Signals:</strong> ${s.flags.join(" · ")}</div>
+        <div class="actions">
+            <button class="action-btn action-trust" onclick="handleAction('trust')">Trust / Approve</button>
+            <button class="action-btn action-verify" onclick="handleAction('verify')">Verify via Trusted Channel</button>
+            <button class="action-btn action-block" onclick="handleAction('block')">Block / Report</button>
+        </div>
+    `;
+}
+
+function logEntry(action, outcome, explanation) {
+    const div = document.createElement("div");
+    div.className = "log-entry";
+    let badgeClass = "badge-neutral";
+    if (outcome === "good") badgeClass = "badge-good";
+    if (outcome === "bad") badgeClass = "badge-bad";
+    div.innerHTML = `
+        <div class="log-label">
+            Round ${currentScenarioIndex + 1} – You chose: ${action}
+            <span class="badge ${badgeClass}">${outcome.toUpperCase()}</span>
+        </div>
+        <div class="log-text">${explanation}</div>
+    `;
+    logDiv.prepend(div);
+}
+
+function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+}
+
+function updateBars() {
+    trust = clamp(trust, 0, 100);
+    risk = clamp(risk, 0, 100);
+    trustBar.style.width = trust + "%";
+    riskBar.style.width = risk + "%";
+    trustScore.textContent = trust;
+    riskScore.textContent = risk;
+}
+
+function handleAction(action) {
+    if (gameOver) return;
+    const s = scenarioSequence[currentScenarioIndex];
+    let outcome = "neutral";
+    let explanation = s.explanation;
+
+    if (action === s.best) {
+        outcome = "good";
+        trust += 5;
+        risk -= 5;
+    } else {
+        outcome = "bad";
+        if (s.truth === "attack") {
+            if (action === "trust") {
+                risk += 20;
+                trust -= 10;
+                explanation += " You trusted an attack – the attacker crossed the bridge.";
+            } else if (action === "verify") {
+                risk += 5;
+                explanation += " Verification was okay, but stronger blocking would be safer.";
+            } else if (action === "block") {
+                risk += 5;
+            }
+        } else if (s.truth === "legit") {
+            if (action === "block") {
+                trust -= 15;
+                explanation += " You blocked a legitimate request – you damaged the trust bridge.";
+            } else if (action === "verify") {
+                trust -= 2;
+                explanation += " Over-verification slowed things down but was still safe.";
+            } else if (action === "trust") {
+                trust += 2;
+            }
+        } else if (s.truth === "legit_maybe") {
+            if (action === "trust") {
+                risk += 10;
+                explanation += " This could have been spoofed – trusting without verification is risky.";
+            } else if (action === "block") {
+                trust -= 10;
+                explanation += " You blocked something that might have been real – friction added.";
+            }
+        }
+    }
+
+    updateBars();
+    logEntry(action, outcome, explanation);
+
+    currentScenarioIndex++;
+    if (risk >= 100 || trust <= 0 || currentScenarioIndex >= totalRounds) {
+        endGame();
+    } else {
+        renderScenario();
+    }
+}
+
+function endGame() {
+    gameOver = true;
+    scenarioCard.innerHTML = "<h2>Simulation complete.</h2><p>Check the incident log to review your decisions.</p>";
+
+    let verdict = "";
+    if (risk >= 100) {
+        verdict = "Your risk level maxed out. Multiple attacks crossed the bridge and caused serious incidents.";
+    } else if (trust <= 0) {
+        verdict = "Your trust bridge collapsed. You blocked or over-scrutinized too many legitimate requests.";
+    } else if (risk < 40 && trust > 60) {
+        verdict = "Excellent balance. You kept attackers out while maintaining strong internal trust.";
+    } else {
+        verdict = "Mixed performance. You handled some situations well, but there’s room to improve your balance.";
+    }
+
+    const finalScore = Math.max(0, Math.round(trust * 2 - risk));
+
+    endScreen.innerHTML = `
+        <div class="end-screen">
+            <div class="end-title">Final Assessment</div>
+            <div>${verdict}</div>
+            <div style="margin-top:8px;">Final Trust: ${trust} · Final Risk: ${risk}</div>
+            <div style="margin-top:4px;"><strong>Final Score:</strong> ${finalScore}</div>
+            <button class="restart-btn" onclick="showHomeScreen()">Back to Home</button>
+        </div>
+    `;
+}
+
+showHomeScreen();
+</script>
+
+</body>
+</html>
